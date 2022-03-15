@@ -17,11 +17,29 @@ class StemBlock(nn.Module):
         return output
 
 
+class Block53(nn.Module):
+    def __init__(self, in_channels, out_channels, kernel_size, stride):
+        super(Block53, self).__init__()
+        self.conv1 = Conv2dBnAct(in_channels=in_channels, out_channels=out_channels // 2, kernel_size=1, stride=1)
+        self.conv2 = Conv2dBnAct(in_channels=out_channels // 2, out_channels=out_channels, kernel_size=kernel_size, stride=stride)
+        self.residual = Conv2dBn(in_channels=in_channels, out_channels=out_channels, kernel_size=1, stride=stride)
+
+    def forward(self, input):
+        output = self.conv1(input)
+        output = self.conv2(output)
+        if input.size() != output.size():
+            input = self.residual(input)
+        output += input
+        return output
+
+
+
 class _DarkNet53(nn.Module):
     def __init__(self, in_channels, classes):
         super(_DarkNet53, self).__init__()
         self.in_channels = 64
         self.stem = StemBlock(in_channels=in_channels, out_channels=self.in_channels)
+        # stage + iter cnt + layer_idx(convolution append)
 
     def forward(self, input):
         stem = self.stem(input)
@@ -39,4 +57,4 @@ def DarkNet(in_channels, classes=1000, varient=53):
 
 if __name__ == '__main__':
     model = DarkNet(in_channels=3, classes=1000)
-    model(torch.rand(1, 3, 256, 256))
+    model(torch.rand(1, 3, 416, 416))
