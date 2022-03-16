@@ -68,7 +68,6 @@ class _DarkNet53(nn.Module):
         pred = pred.view(b, c)
         return {'pred':pred}
 
-
     def make_block(self, cfg):
         layers = []
         input_ch = cfg[0]
