@@ -31,11 +31,15 @@ class _DarkNet53(nn.Module):
         block4 = [512, 3, 1, 8]
         block5 = [1024, 3, 1, 4]
 
-        self.block1 = self.make_block(block1, 128)
-        self.block2 = self.make_block(block2, 256)
-        self.block3 = self.make_block(block3, 512)
-        self.block4 = self.make_block(block4, 1024)
-        self.block5 = self.make_block(block5, 1024)
+        self.block1 = self.make_block(block1)
+        self.s1_max_pool = Conv2dBnAct(in_channels=block1[0], out_channels=block2[0], kernel_size=3, stride=2)
+        self.block2 = self.make_block(block2)
+        self.s2_max_pool = Conv2dBnAct(in_channels=block2[0], out_channels=block3[0], kernel_size=3, stride=2)
+        self.block3 = self.make_block(block3)
+        self.s3_max_pool = Conv2dBnAct(in_channels=block3[0], out_channels=block4[0], kernel_size=3, stride=2)
+        self.block4 = self.make_block(block4)
+        self.s4_max_pool = Conv2dBnAct(in_channels=block4[0], out_channels=block5[0], kernel_size=3, stride=2)
+        self.block5 = self.make_block(block5)
 
         self.classifier = nn.Sequential(
             nn.AdaptiveAvgPool2d(1),
@@ -49,32 +53,28 @@ class _DarkNet53(nn.Module):
         )
 
     def forward(self, input):
-        stem = self.stem(input) # [1, 64, 208, 208]
-        s1 = self.block1(stem) # [1, 128, 104, 104]
-        s2 = self.block2(s1) # [1, 256, 52, 52]
-        s3 = self.block3(s2) # [1, 512, 26, 26]
-        s4 = self.block4(s3) # [1, 1024, 13, 13]
-        s5 = self.block5(s4) # [1, 1024, 13, 13]
+        stem = self.stem(input) 
+        s1 = self.block1(stem) 
+        s1_max = self.s1_max_pool(s1) 
+        s2 = self.block2(s1_max) 
+        s2_max = self.s2_max_pool(s2) 
+        s3 = self.block3(s2_max) 
+        s3_max = self.s3_max(s3) 
+        s4 = self.block4(s3_max) 
+        s4_max = self.s4_max(s4) 
+        s5 = self.block5(s4_max) 
         pred = self.classifier(s5)
         b, c, h, w = pred.size()
         pred = pred.view(b, c)
         return {'pred':pred}
 
-
-    def make_block(self, cfg, out_channels):
+    def make_block(self, cfg):
         layers = []
         input_ch = cfg[0]
-        if cfg[-1] == 4:
-            for i in range(cfg[-1]):
-                layer = Block53(in_channels=input_ch, out_channels=cfg[0], kernel_size=cfg[1], stride=cfg[2])
-                layers.append(layer)
-                input_ch = layer.get_channels()
-        else:
-            for i in range(cfg[-1]):
-                layer = Block53(in_channels=input_ch, out_channels=cfg[0], kernel_size=cfg[1], stride=cfg[2])
-                layers.append(layer)
-                input_ch = layer.get_channels()
-            layers.append(Conv2dBnAct(in_channels=cfg[0], out_channels=out_channels, kernel_size=3, stride=2))
+        for i in range(cfg[-1]):
+            layer = Block53(in_channels=input_ch, out_channels=cfg[0], kernel_size=cfg[1], stride=cfg[2])
+            layers.append(layer)
+            input_ch = layer.get_channels()
         return nn.Sequential(*layers)
 
 
