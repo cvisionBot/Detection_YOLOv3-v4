@@ -49,20 +49,13 @@ class _DarkNet53(nn.Module):
         )
 
     def forward(self, input):
-        stem = self.stem(input)
-        print('stem shape : ', stem.shape)
-        s1 = self.block1(stem)
-        print('s1 shape : ', s1.shape)
-        s2 = self.block2(s1)
-        print('s2 shape : ', s2.shape)
-        s3 = self.block3(s2)
-        print('s3 shape : ', s3.shape)
-        s4 = self.block4(s3)
-        print('s4 shape : ', s4.shape)
-        s5 = self.block5(s4)
-        print('s5 shape : ', s5.shape)
+        stem = self.stem(input) # [1, 64, 208, 208]
+        s1 = self.block1(stem) # [1, 128, 104, 104]
+        s2 = self.block2(s1) # [1, 256, 52, 52]
+        s3 = self.block3(s2) # [1, 512, 26, 26]
+        s4 = self.block4(s3) # [1, 1024, 13, 13]
+        s5 = self.block5(s4) # [1, 1024, 13, 13]
         pred = self.classifier(s5)
-        print('pred shape : ', pred.shape)
         b, c, h, w = pred.size()
         pred = pred.view(b, c)
         return {'pred':pred}
