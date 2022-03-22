@@ -43,6 +43,7 @@ class YOLOv3(nn.Module):
 
         rout1 = self.rout1(neck1)
         concat1 = torch.cat([rout1, s4], dim=1)
+        
         neck2 = self.neck2(concat1)
         branch2 = self.head2(neck2) # [1, 3 * (5 + classes), 26, 26]
 
@@ -58,7 +59,6 @@ class YOLOv3(nn.Module):
 if __name__ == '__main__':
     from models.backbone.darknet import DarkNet
     model = YOLOv3(Backbone=DarkNet, num_classes=20)
-
     # model visualize to onnx
     dumTensor = torch.rand(1, 3, 416, 416)
     model(dumTensor)
