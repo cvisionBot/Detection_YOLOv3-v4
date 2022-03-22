@@ -52,10 +52,6 @@ class YOLOv3(nn.Module):
         neck3 = self.neck3(concat2)
         branch3 = self.head3(neck3) # [1, 3 * (5 + classes), 52, 52]
 
-        print('branch 1 shape : ', branch1.shape)
-        print('branch 2 shape : ', branch2.shape)
-        print('branch 3 shape : ', branch3.shape)
-
         return branch1, branch2, branch3
 
 
@@ -67,4 +63,4 @@ if __name__ == '__main__':
     dumTensor = torch.rand(1, 3, 416, 416)
     model(dumTensor)
     # torch.onnx.export(model, dumTensor, 'model_visualize.onnx', export_params=True, opset_version=9, do_constant_folding=True,
-    #                     input_names=['input'], output_names=['branch1, branch2, branch3'])
+    #                     input_names=['input'], output_names=['branch1', 'branch2, 'branch3'])
