@@ -13,7 +13,9 @@ class Detector(pl.LightningModule):
         self.branch1_anchors = pascal_voc['anchors'][0]
         self.branch2_anchors = pascal_voc['anchors'][1]
         self.branch3_anchors = pascal_voc['anchors'][2]
-        self.loss_fn = YOLO_Loss(cfg)
+        self.branch1_loss = YOLO_Loss(cfg, self.branch1_anchors)
+        self.branch2_loss = YOLO_Loss(cfg, self.branch2_anchors)
+        self.branch3_loss = YOLO_Loss(cfg, self.branch3_anchors)
 
 
     def forward(self, input):
@@ -22,14 +24,26 @@ class Detector(pl.LightningModule):
 
 
     def training_step(self, batch, batch_idx):
-        loss = self.common_opt_training_step(batch)
+        loss = self.opt_training_step(batch)
+        self.log('train_loss', loss, prog_bar=True, logger=True, on_step=True, on_epoch=True)
+        return loss
+    
+    def validation_step(self, batch, batch_idx):
+        val_branch1, val_branch2, val_branch3 = self.model(batch)
+        val_branch1_loss = self.branch1_loss([val_branch1, batch])
+        val_branch2_loss = self.branch2_loss([val_branch2, batch])
+        val_branch3_loss = self.branch3_loss([val_branch3, batch])
+        loss = val_branch1_loss + val_branch2_loss + val_branch3_loss
+        self.log('val_loss', loss, prog_bar=True, logger=True, on_epoch=True, sync_dist=True)
         return loss
 
 
-    def common_opt_training_step(self, batch):
+    def opt_training_step(self, batch):
         branch1, branch2, branch3 = self.model(batch['img'])
-        branch1_loss= self.loss_fn
-        loss = self.loss_fn([branch1, branch2, branch3, batch])
+        branch1_loss = self.branch1_loss([branch1, batch])
+        branch2_loss = self.branch2_loss([branch2, batch])
+        branch3_loss = self.branch3_loss([branch3, batch])
+        loss = branch1_loss + branch2_loss + branch3_loss
         return loss
 
 
