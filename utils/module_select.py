@@ -5,7 +5,7 @@ from models.detector.yolov3 import YOLOv3
 
 
 def get_model(model_name):
-    model_dict = {'DarkNet':DarkNet}
+    model_dict = {'DarkNet53':DarkNet}
     return model_dict.get(model_name)
 
 
