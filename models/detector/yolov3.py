@@ -7,10 +7,10 @@ from models.initialize import weight_initialize
 
 
 class YOLOv3(nn.Module):
-    def __init__(self, Backbone, num_classes, in_channels=3):
+    def __init__(self, Backbone, num_classes, in_channels=3, varient=53):
         super(YOLOv3, self).__init__()
 
-        self.backbone = Backbone(in_channels)
+        self.backbone = Backbone(inchannels=in_channels, classes=num_classes, varient=53)
         self.stage_channels = self.backbone.stages
 
         self.neck1 = Neck_Modules(in_channels=self.stage_channels[3], pre_channels=self.stage_channels[3])
@@ -58,7 +58,7 @@ class YOLOv3(nn.Module):
 
 if __name__ == '__main__':
     from models.backbone.darknet import DarkNet
-    model = YOLOv3(Backbone=DarkNet, num_classes=20)
+    model = YOLOv3(Backbone=DarkNet, num_classes=20, in_channels=3, varient=53)
     # model visualize to onnx
     dumTensor = torch.rand(1, 3, 416, 416)
     model(dumTensor)

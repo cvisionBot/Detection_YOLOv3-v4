@@ -55,7 +55,7 @@ class YOLO_Loss(nn.Module):
         self.cfg = cfg
         self.branch_anchors = anchors
         self.num_anchors = len(self.branch_anchors) # 3
-        self.num_classes = self.cfg['num_classes']
+        self.num_classes = self.cfg['classes']
         self.bbox_attrs = 5 + self.cfg['classes']
         self.img_w = self.cfg['input_size']
         self.img_h = self.cfg['input_size']
