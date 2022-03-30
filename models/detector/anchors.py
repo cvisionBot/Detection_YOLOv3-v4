@@ -2,8 +2,10 @@
 yolov3 anchor (k-means clustering) using DarkNet
 '''
 pascal_voc = {
-    "anchors" : [],
-    "classes" : 80,
+    "anchors" : [[[328, 193], [218, 328], [361, 362]],
+                [[72, 195], [170, 178], [122, 296]],
+                [[26, 38], [46, 97], [118, 92]]],
+    "classes" : 20,
 }
 
 coco = {

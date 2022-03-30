@@ -5,16 +5,15 @@ from torch import nn
 
 
 def bbox_iou(box1, box2, x1y1x2y2=True, GIoU=False, DIoU=False, CIoU=False, eps=1e-9):
-    box2 = box2.T
 
     if x1y1x2y2:
-        b1_x1, b1_y1, b2_x2, b2_y2 = box1[0], box1[1], box1[2], box1[3]
-        b2_x1, b2_y1, b2_x2, b2_y2 = box2[0], box2[1], box2[2], box2[3]
+        b1_x1, b1_y1, b1_x2, b1_y2 = box1[:, 0], box1[:, 1], box1[:, 2], box1[:, 3]
+        b2_x1, b2_y1, b2_x2, b2_y2 = box2[:, 0], box2[:, 1], box2[:, 2], box2[:, 3]
     else: # transform from xywh to xyxy
-        b1_x1, b1_x2 = box1[0] - box1[2] / 2, box1[0] + box1[2] / 2
-        b1_y1, b1_y2 = box1[1] - box1[3] / 2, box1[1] + box1[3] / 2
-        b2_x1, b2_x2 = box2[0] - box2[2] / 2, box2[0] + box2[2] / 2
-        b2_y1, b2_y2 = box2[1] - box2[3] / 2, box2[0] + box2[3] / 2
+        b1_x1, b1_x2 = box1[:, 0] - box1[:, 2] / 2, box1[:, 0] + box1[:, 2] / 2
+        b1_y1, b1_y2 = box1[:, 1] - box1[:, 3] / 2, box1[:, 1] + box1[:, 3] / 2
+        b2_x1, b2_x2 = box2[:, 0] - box2[:, 2] / 2, box2[:, 0] + box2[:, 2] / 2
+        b2_y1, b2_y2 = box2[:, 1] - box2[:, 3] / 2, box2[:, 1] + box2[:, 3] / 2
     
     # Intersection area
     inter = (torch.min(b1_x2, b2_x2) - torch.max(b1_x1, b2_x1)).clamp(0) * \
@@ -75,7 +74,6 @@ class YOLO_Loss(nn.Module):
         stride_h = self.img_h / layer_h
         stride_w = self.img_w / layer_w
         scaled_anchors = [(a_w / stride_w, a_h / stride_h) for a_w, a_h in self.branch_anchors]
-
         # [b, 3, (5 + 20), layer_h, layer_w]
         prediction = pred.view(batch_size, self.num_anchors, self.bbox_attrs, layer_h, layer_w).permute(0, 1, 3, 4, 2).contiguous()
 
@@ -106,8 +104,6 @@ class YOLO_Loss(nn.Module):
         return loss
 
 
-
-
     def encode_target(self, target, anchors, layer_w, layer_h, ignore_threshold):
         batch_size = target.size()[0]
 
@@ -124,29 +120,30 @@ class YOLO_Loss(nn.Module):
             for t in range(target.size()[1]):
                 if target[b, t].sum() == 0:
                     continue
-                
-                gx = target[b, t, 1] * layer_w
-                gy = target[b, t, 2] * layer_h
-                gw = target[b, t, 3] * layer_w
-                gh = target[b, t, 4] * layer_h
+                gx = target[b, t, 0] * layer_w
+                gy = target[b, t, 1] * layer_h
+                gw = (target[b, t, 2] * layer_w).cpu()
+                gh = (target[b, t, 3] * layer_h).cpu()
 
                 gi = int(gx)
                 gj = int(gy)
 
                 gt_box = torch.FloatTensor(np.array([0, 0, gw, gh])).unsqueeze(0)
-                anchor_shapes = torch.FloatTensor(np.concatenate((np.zeros((self.num_anchors, 2)), np.zrray(anchors)), 1))
+                anchor_shapes = torch.FloatTensor(np.concatenate((np.zeros((self.num_anchors, 2)), np.array(anchors)), 1))
 
-                calc_iou = bbox_iou(gt_box,anchor_shapes, x1y1x2y2=False)
-                noobj_mask[batch_size, calc_iou > ignore_threshold, gj, gi] = 0
+                calc_iou = bbox_iou(gt_box,anchor_shapes, x1y1x2y2=True)
+                print('gi : ', gi)
+                print('gj : ', gj)
+                noobj_mask[b, calc_iou > ignore_threshold, gj, gi] = 0
                 best_n = np.argmax(calc_iou)
 
-                mask[batch_size, best_n, gj, gi] = 1
-                tx[batch_size, best_n, gj, gi] = gx - gi
-                ty[batch_size, best_n, gj, gi] = gy - gj
-                tw[batch_size, best_n, gj, gi] = math.log(gw/anchors[best_n][0] + 1e-16)
-                th[batch_size, best_n, gj, gi] = math.log(gh/anchors[best_n][1] + 1e-16)
-                tconf[batch_size, best_n, gj, gi] = 1
-                tcls[batch_size, best_n, gj, gi, int(target[b, t, 0])] = 1
+                mask[b, best_n, gj, gi] = 1
+                tx[b, best_n, gj, gi] = gx - gi
+                ty[b, best_n, gj, gi] = gy - gj
+                tw[b, best_n, gj, gi] = math.log(gw/anchors[best_n][0] + 1e-16)
+                th[b, best_n, gj, gi] = math.log(gh/anchors[best_n][1] + 1e-16)
+                tconf[b, best_n, gj, gi] = 1
+                tcls[b, best_n, gj, gi, int(target[b, t, 4])] = 1
         return mask, noobj_mask, tx, ty, tw, th, tconf, tcls    
 
     

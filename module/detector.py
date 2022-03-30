@@ -29,7 +29,7 @@ class Detector(pl.LightningModule):
         return loss
     
     def validation_step(self, batch, batch_idx):
-        val_branch1, val_branch2, val_branch3 = self.model(batch)
+        val_branch1, val_branch2, val_branch3 = self.model(batch['img'])
         val_branch1_loss = self.branch1_loss([val_branch1, batch])
         val_branch2_loss = self.branch2_loss([val_branch2, batch])
         val_branch3_loss = self.branch3_loss([val_branch3, batch])
@@ -47,7 +47,7 @@ class Detector(pl.LightningModule):
         return loss
 
 
-    def configure_optimizer(self):
+    def configure_optimizers(self):
         cfg = self.hparams.cfg
         optim = get_optimizer(cfg['optimizer'],
             params=self.model.parameters(),
