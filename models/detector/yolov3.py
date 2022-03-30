@@ -10,7 +10,7 @@ class YOLOv3(nn.Module):
     def __init__(self, Backbone, num_classes, in_channels=3, varient=53):
         super(YOLOv3, self).__init__()
 
-        self.backbone = Backbone(inchannels=in_channels, classes=num_classes, varient=53)
+        self.backbone = Backbone(in_channels=in_channels, classes=num_classes, varient=varient)
         self.stage_channels = self.backbone.stages
 
         self.neck1 = Neck_Modules(in_channels=self.stage_channels[3], pre_channels=self.stage_channels[3])
