@@ -25,9 +25,6 @@ def collater(data):
         padded_annots = torch.ones((batch_size, max_num_annots, 5)) * -1
         for idx, annot in enumerate(bboxes):
             if annot.shape[0] > 0:
-                # To x1, y1, x2, y2
-                annot[:, 2] += annot[:, 0]
-                annot[:, 3] += annot[:, 1]
                 padded_annots[idx, :annot.shape[0], :] = annot
     else:
         padded_annots = torch.ones((batch_size, 1, 5)) * -1
@@ -49,7 +46,14 @@ def visualize(images, bboxes, batch_idx=0):
     img = (np.transpose(img, (1, 2, 0))*255.).astype(np.uint8).copy()
 
     for b in bboxes[batch_idx]:
-        x1, y1, x2, y2, cid = b.numpy()
+        cx, cy, w, h, cid = b.numpy()
+        x1 = (cx - w / 2) * 416
+        y1 = (cy - h / 2) * 416
+        w = w * 416
+        h = h * 416
+        x2 = (w + x1) 
+        y2 = (h + y1) 
+
         if cid > -1:
             img = cv2.rectangle(img, (int(x1), int(y1)),
                                 (int(x2), int(y2)), (0, 255, 0))

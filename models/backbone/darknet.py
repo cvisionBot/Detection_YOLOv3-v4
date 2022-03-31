@@ -45,12 +45,12 @@ class _DarkNet53(nn.Module):
             nn.AdaptiveAvgPool2d(1),
             nn.Conv2d(1024, classes, 1)
         )
-        self.yolo_classifier = nn.Sequential(
-            nn.AdaptiveAvgPool2d(1),
-            nn.Flatten(),
-            nn.Linear(in_features=1024, out_features=classes),
-            nn.Softmax()
-        )
+        # self.yolo_classifier = nn.Sequential(
+        #     nn.AdaptiveAvgPool2d(1),
+        #     nn.Flatten(),
+        #     nn.Linear(in_features=1024, out_features=classes),
+        #     nn.Softmax()
+        # )
 
     def forward(self, input):
         stem = self.stem(input) 

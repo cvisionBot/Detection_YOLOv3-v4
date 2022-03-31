@@ -12,7 +12,7 @@ class Conv2dBnAct(nn.Module):
                                 padding=self.padding, dilation=dilation, groups=groups, bias=False, padding_mode=padding_mode)
         self.bn = nn.BatchNorm2d(num_features=out_channels)
         if act is None:
-            act = nn.ReLU()
+            act = nn.LeakyReLU()
         self.act = act
 
     def forward(self, input):

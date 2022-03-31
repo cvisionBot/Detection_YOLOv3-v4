@@ -62,5 +62,5 @@ if __name__ == '__main__':
     # model visualize to onnx
     dumTensor = torch.rand(1, 3, 416, 416)
     model(dumTensor)
-    # torch.onnx.export(model, dumTensor, 'model_visualize.onnx', export_params=True, opset_version=9, do_constant_folding=True,
-    #                     input_names=['input'], output_names=['branch1', 'branch2, 'branch3'])
+    torch.onnx.export(model, dumTensor, 'model_visualize.onnx', export_params=True, opset_version=9, do_constant_folding=True,
+                        input_names=['input'], output_names=['branch1', 'branch2', 'branch3'])
