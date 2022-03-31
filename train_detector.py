@@ -26,13 +26,13 @@ def train(cfg, ckpt=None):
         albumentations.RandomResizedCrop(input_size, input_size, (0.8, 1)),
         albumentations.Normalize(0, 1),
         albumentations.pytorch.ToTensorV2(),
-    ], bbox_params=albumentations.BboxParams(format='coco', min_visibility=0.1))
+    ], bbox_params=albumentations.BboxParams(format='yolo', min_visibility=0.1))
 
     valid_transform = albumentations.Compose([
         albumentations.Resize(input_size, input_size, always_apply=True),
         albumentations.Normalize(0, 1),
         albumentations.pytorch.ToTensorV2(),
-    ], bbox_params=albumentations.BboxParams(format='coco', min_visibility=0.1))
+    ], bbox_params=albumentations.BboxParams(format='yolo', min_visibility=0.1))
 
     data_module = yolo_format.YoloFormat(
         train_path=cfg['train_path'], val_path=cfg['val_path'],

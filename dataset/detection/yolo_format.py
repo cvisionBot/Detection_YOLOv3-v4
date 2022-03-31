@@ -30,11 +30,7 @@ class YoloDataset(Dataset):
             annotations = f.read().splitlines()
             for annot in annotations:
                 cid, cx, cy, w, h = map(float, annot.split(' '))
-                x1 = (cx - w / 2) * img_w
-                y1 = (cy - h / 2) * img_h
-                w *= img_w
-                h *= img_h
-                annotation = np.array([[x1, y1, w, h, cid]])
+                annotation = np.array([[cx, cy, w, h, cid]])
                 boxes = np.append(boxes, annotation, axis=0)
         return boxes
 
@@ -89,7 +85,7 @@ if __name__ == '__main__':
         albumentations.RandomResizedCrop(416, 416, (0.8, 1)),
         albumentations.Normalize(0, 1),
         albumentations.pytorch.ToTensorV2(),
-    ], bbox_params=albumentations.BboxParams(format='coco', min_visibility=0.1))
+    ], bbox_params=albumentations.BboxParams(format='yolo', min_visibility=0.1))
 
     loader = DataLoader(YoloDataset(
         transforms=train_transforms, path='/mnt/det_test'),
