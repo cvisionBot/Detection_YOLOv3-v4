@@ -22,13 +22,13 @@ def collater(data):
     max_num_annots = max(annots.shape[0] for annots in bboxes)
 
     if max_num_annots > 0:
-        padded_annots = torch.ones((batch_size, max_num_annots, 5)) * -1
+        padded_annots = (torch.ones((batch_size, max_num_annots, 5)) * -1)
         for idx, annot in enumerate(bboxes):
             if annot.shape[0] > 0:
                 padded_annots[idx, :annot.shape[0], :] = annot
+                
     else:
         padded_annots = torch.ones((batch_size, 1, 5)) * -1
-
     return {'img': torch.stack(imgs), 'annot': padded_annots}
 
 

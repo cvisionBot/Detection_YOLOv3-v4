@@ -1,5 +1,5 @@
 import pytorch_lightning as pl
-
+import torch
 from torch import nn
 from utils.module_select import get_optimizer
 from models.loss.yolo_loss import YOLO_Loss
@@ -29,20 +29,21 @@ class Detector(pl.LightningModule):
         return loss
     
     def validation_step(self, batch, batch_idx):
-        val_branch1, val_branch2, val_branch3 = self.model(batch['img'])
-        val_branch1_loss = self.branch1_loss([val_branch1, batch])
-        val_branch2_loss = self.branch2_loss([val_branch2, batch])
-        val_branch3_loss = self.branch3_loss([val_branch3, batch])
-        loss = val_branch1_loss + val_branch2_loss + val_branch3_loss
+        branch1, branch2, branch3 = self.model(batch['img'])
+        branch1_loss = self.branch1_loss([branch1, batch['annot']])
+        branch2_loss = self.branch2_loss([branch2, batch['annot']])
+        branch3_loss = self.branch3_loss([branch3, batch['annot']])
+        loss = branch1_loss + branch2_loss + branch3_loss
         self.log('val_loss', loss, prog_bar=True, logger=True, on_epoch=True, sync_dist=True)
         return loss
 
 
     def opt_training_step(self, batch):
+        #with torch.autograd.detect_anomaly():
         branch1, branch2, branch3 = self.model(batch['img'])
-        branch1_loss = self.branch1_loss([branch1, batch])
-        branch2_loss = self.branch2_loss([branch2, batch])
-        branch3_loss = self.branch3_loss([branch3, batch])
+        branch1_loss = self.branch1_loss([branch1, batch['annot']])
+        branch2_loss = self.branch2_loss([branch2, batch['annot']])
+        branch3_loss = self.branch3_loss([branch3, batch['annot']])
         loss = branch1_loss + branch2_loss + branch3_loss
         return loss
 
