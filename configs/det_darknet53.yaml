@@ -2,14 +2,14 @@ model: 'DarkNet53_YOLOv3'
 dataset_name: 'Pascal'
 classes: 20
 in_channels: 3
-train_path: '/mnt/det_test'
-val_path: '/mnt/det_test'
+train_path: '/mnt/det_train'
+val_path: '/mnt/det_valid'
 names: '/dataset/detection/names/pascal_voc.txt'
 input_size: 416
 
 workers: 4
 epochs: 500
-batch_size: 1
+batch_size: 8
 
 save_freq: 1
 save_dir: './saved'
@@ -18,10 +18,9 @@ gpus: -1
 backbone: 'DarkNet53'
 varient: 53
 
-optimizer: 'sgd'
+optimizer: 'adam'
 optimizer_options:
   lr: 1e-3
-  momentum: 0.9
 
 loss: 'yolo_loss'
 

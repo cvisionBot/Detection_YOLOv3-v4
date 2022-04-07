@@ -4,7 +4,7 @@ import numpy as np
 from torch import nn
 
 
-def bbox_iou(box1, box2, x1y1x2y2=True, GIoU=False, DIoU=False, CIoU=False, eps=1e-9):
+def bbox_iou(box1, box2, x1y1x2y2=False, GIoU=False, DIoU=False, CIoU=False, eps=1e-9):
 
     if x1y1x2y2:
         b1_x1, b1_y1, b1_x2, b1_y2 = box1[:, 0], box1[:, 1], box1[:, 2], box1[:, 3]
@@ -64,51 +64,52 @@ class YOLO_Loss(nn.Module):
         self.lambda_wh = 2.5
         self.lambda_conf = 1.0
         self.lambda_cls = 1.0
-
-        self.mse_loss = nn.MSELoss()
-        self.bce_loss = nn.BCELoss()
+        self.loss = 100
+        self.mse_loss = nn.MSELoss(size_average=False)
+        self.bce_loss = nn.BCELoss(size_average=False)
 
     def forward(self, input):
-        with torch.autograd.set_detect_anomaly(True):
-            pred, target = input
-            batch_size, _, layer_h, layer_w = pred.size()
-            stride_h = self.img_h / layer_h
-            stride_w = self.img_w / layer_w
-            scaled_anchors = [(a_w / stride_w, a_h / stride_h) for a_w, a_h in self.branch_anchors]
-            # [b, 3, (5 + 20), layer_h, layer_w]
-            prediction = pred.view(batch_size, self.num_anchors, self.bbox_attrs, layer_h, layer_w).permute(0, 1, 3, 4, 2).contiguous()
+        pred, target = input
+        batch_size, _, layer_h, layer_w = pred.size()
+        stride_h = self.img_h / layer_h
+        stride_w = self.img_w / layer_w
+        scaled_anchors = [(a_w / stride_w, a_h / stride_h) for a_w, a_h in self.branch_anchors]
+        # [b, 3, (5 + 20), layer_h, layer_w]
+        prediction = pred.view(batch_size, self.num_anchors, self.bbox_attrs, layer_h, layer_w).permute(0, 1, 3, 4, 2).contiguous()
+        
+        # Get outputs
+        x = torch.sigmoid(prediction[..., 0])
+        y = torch.sigmoid(prediction[..., 1])
+        w = prediction[..., 2]
+        h = prediction[..., 3]
+        conf = torch.sigmoid(prediction[..., 4])
+        pred_cls = torch.sigmoid(prediction[..., 5:])
 
-            # Get outputs
-            x = torch.sigmoid(prediction[..., 0])
-            y = torch.sigmoid(prediction[..., 1])
-            w = prediction[..., 2]
-            h = prediction[..., 3]
-            conf = torch.sigmoid(prediction[..., 4])
-            pred_cls = torch.sigmoid(prediction[..., 5:])
 
-            ground_truth = target['annot']
-
-            mask, noobj_mask, tx, ty, tw, th, tconf, tcls = self.encode_target(ground_truth, scaled_anchors, layer_w, layer_h, self.ignore_threshold)
-            mask, noobj_mask = mask.cuda(), noobj_mask.cuda()
-            tx, ty, tw, th = tx.cuda(), ty.cuda(), tw.cuda(), th.cuda()
-            tconf, tcls = tconf.cuda(), tcls.cuda()
-            # loss
-            loss_x = self.bce_loss(x * mask, tx * mask)
-            loss_y = self.bce_loss(y * mask, ty * mask)
-            loss_w = self.mse_loss(w * mask, tw * mask)
-            loss_h = self.mse_loss(h * mask, th * mask)
-            loss_conf = self.bce_loss(conf * mask, mask) + \
-                0.5 * self.bce_loss(conf * noobj_mask, noobj_mask * 0.0)
-            loss_cls = self.bce_loss(pred_cls[mask==1], tcls[mask==1])
-            loss = (loss_x * self.lambda_xy) + (loss_y * self.lambda_xy) + \
-                (loss_w * self.lambda_wh) + (loss_h * self.lambda_wh) + \
-                    (loss_conf * self.lambda_conf) + (loss_cls * self.lambda_cls)
-            return loss
+        mask, noobj_mask, tx, ty, tw, th, tconf, tcls = self.encode_target(target, scaled_anchors, layer_w, layer_h, self.ignore_threshold)
+        mask, noobj_mask = mask.cuda(), noobj_mask.cuda()
+        tx, ty, tw, th = tx.cuda(), ty.cuda(), tw.cuda(), th.cuda()
+        tconf, tcls = tconf.cuda(), tcls.cuda()
+        
+        # loss
+        loss_x = self.mse_loss(x * mask, tx * mask)
+        loss_y = self.mse_loss(y * mask, ty * mask)
+        loss_w = self.mse_loss(w * mask, tw * mask)
+        loss_h = self.mse_loss(h * mask, th * mask)
+        loss_conf = self.bce_loss(conf * mask, mask) + \
+            0.5 * self.bce_loss(conf * noobj_mask, noobj_mask * 0.0)
+        loss_cls = self.bce_loss(pred_cls[mask==1], tcls[mask==1])
+        loss = (loss_x * self.lambda_xy) + (loss_y * self.lambda_xy) + \
+            (loss_w * self.lambda_wh) + (loss_h * self.lambda_wh) + \
+                (loss_conf * self.lambda_conf) + (loss_cls * self.lambda_cls)
+        loss = (loss_x * self.lambda_xy) + (loss_y * self.lambda_xy) + \
+            (loss_w * self.lambda_wh) + (loss_h * self.lambda_wh) + \
+                 (loss_conf * self.lambda_conf) + (loss_cls * self.lambda_cls)
+        return loss
 
 
     def encode_target(self, target, anchors, layer_w, layer_h, ignore_threshold):
-        batch_size = target.size()[0]
-
+        batch_size = target.size(0)
         mask = torch.zeros(batch_size, self.num_anchors, layer_h, layer_w)
         noobj_mask = torch.ones(batch_size, self.num_anchors, layer_h, layer_w)
         tx = torch.zeros(batch_size, self.num_anchors, layer_h, layer_w)
@@ -119,14 +120,13 @@ class YOLO_Loss(nn.Module):
         tcls = torch.zeros(batch_size, self.num_anchors, layer_h, layer_w, self.num_classes)
 
         for b in range(batch_size):
-            for t in range(target.size()[1]):
-                if target[b, t].sum() == 0:
+            for t in range(target.shape[1]):
+                if target[b, t].sum() <= 0:
                     continue
-                gx = target[b, t, 1] * layer_w
-                gy = target[b, t, 2] * layer_h
-                gw = (target[b, t, 3] * layer_w).clone().cpu()
-                gh = (target[b, t, 4] * layer_h).clone().cpu()
-
+                gx = target[b, t, 0] * layer_w
+                gy = target[b, t, 1] * layer_h
+                gw = (target[b, t, 2] * layer_w).cpu()
+                gh = (target[b, t, 3] * layer_h).cpu()
                 gi = int(gx)
                 gj = int(gy)
 
@@ -134,17 +134,15 @@ class YOLO_Loss(nn.Module):
                 anchor_shapes = torch.FloatTensor(np.concatenate((np.zeros((self.num_anchors, 2)), np.array(anchors)), 1))
 
                 calc_iou = bbox_iou(gt_box,anchor_shapes, x1y1x2y2=False)
-
                 noobj_mask[b, calc_iou > ignore_threshold, gj, gi] = 0
                 best_n = np.argmax(calc_iou)
-
                 mask[b, best_n, gj, gi] = 1
                 tx[b, best_n, gj, gi] = gx - gi
                 ty[b, best_n, gj, gi] = gy - gj
                 tw[b, best_n, gj, gi] = math.log(gw/anchors[best_n][0] + 1e-16)
                 th[b, best_n, gj, gi] = math.log(gh/anchors[best_n][1] + 1e-16)
                 tconf[b, best_n, gj, gi] = 1
-                tcls[b, best_n, gj, gi, int(target[b, t, 0])] = 1
+                tcls[b, best_n, gj, gi, int(target[b, t, 4])] = 1
         return mask, noobj_mask, tx, ty, tw, th, tconf, tcls    
 
     

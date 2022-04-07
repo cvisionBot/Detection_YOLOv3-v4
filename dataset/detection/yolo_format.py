@@ -89,7 +89,7 @@ if __name__ == '__main__':
 
     loader = DataLoader(YoloDataset(
         transforms=train_transforms, path='/mnt/det_test'),
-        batch_size=1, shuffle=True, collate_fn=collater)
+        batch_size=2, shuffle=True, collate_fn=collater)
 
     for batch, sample in enumerate(loader):
         imgs = sample['img']
