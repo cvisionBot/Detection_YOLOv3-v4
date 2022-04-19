@@ -4,18 +4,17 @@ from torch import nn
 from ..layers.convolution import Conv2dBn, Conv2dBnAct
 
 class Block53(nn.Module):
-    def __init__(self, in_channels, out_channels, kernel_size, stride):
+    def __init__(self, in_channels, out_channels, kernel_size, stride, activation=None):
         super(Block53, self).__init__()
         self.get_channel = out_channels
-        self.conv1 = Conv2dBnAct(in_channels=in_channels, out_channels=out_channels // 2, kernel_size=1, stride=1)
-        self.conv2 = Conv2dBnAct(in_channels=out_channels // 2, out_channels=out_channels, kernel_size=kernel_size, stride=stride)
-        self.residual = Conv2dBnAct(in_channels=in_channels, out_channels=out_channels, kernel_size=1, stride=stride)
+        self.conv1 = Conv2dBnAct(in_channels=in_channels, out_channels=out_channels // 2, kernel_size=1, stride=1, dilation=1, groups=1,
+                                    padding_mode='zeros', act=activation)
+        self.conv2 = Conv2dBnAct(in_channels=out_channels // 2, out_channels=out_channels, kernel_size=kernel_size, stride=stride, dilation=1, groups=1,
+                                    padding_mode='zeros', act=activation)
 
     def forward(self, input):
         output = self.conv1(input)
         output = self.conv2(output)
-        # if input.size() != output.size():
-        #     input = self.residual(input)
         output = output +  input
         return output
     
