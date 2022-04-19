@@ -1,9 +1,11 @@
-# Detection_YOLOv3
+# Detection_YOLOv3-v4
 YOLOv3 방식으로 Pytorch framework 사용하여 object detection을 진행하는 프로젝트 입니다.
+YOLOv4 방식으로 Pytorch framework 사용하여 object detection을 진행하는 프로젝트 입니다.
 
 ## Implementations
 
 - YOLOv3
+- YOLOv4 (SSP, PAN)
 - YOLO_Loss (CIoU, DIoU, GIoU)
 - Data(Prepare)
 - Data Augmentations(Albumentations)
@@ -11,7 +13,7 @@ YOLOv3 방식으로 Pytorch framework 사용하여 object detection을 진행하
 
 ## 프로젝트 구조
 ```
-Detection_YOLOv3
+Detection_YOLOv3-v4
 ├─ .gitignore
 ├─ __README.md
 ├─ configs # 학습 시 사용할 하이퍼 파라미터, 데이터셋 설정 등 Configuration을 위한 yaml 파일 경로
@@ -66,4 +68,3 @@ Object Detector 모델 Train 스크립트 입니다.
 - Deployment를 위한 ONNX Conversion Script, Torch Script 추가
 - mAP Callback method 추가
 - QAT, Grad Clip, SWA, FP16 등 학습 기법 추가 및 테스트
-- YOLOv4 version upgrade
