@@ -2,96 +2,16 @@ import torch
 from torch import nn
 
 from ..layers.convolution import Conv2dBn, Conv2dBnAct
-from ..layers.blocks import Block53
+from ..layers.blocks import StemBlock, Block53, CSPstemBlock, CSPBlock
 from ..initialize import weight_initialize
-
-class CSPstemBlock(nn.Module):
-    def __init__(self, in_channels, out_channels, iter_cnt, activation=None):
-        super(CSPstemBlock, self).__init__()
-        self.iter_cnt = iter_cnt
-        self.block_list = nn.ModuleList([])
-        self.conv1 = Conv2dBnAct(in_channels=in_channels, out_channels=out_channels // 2, kernel_size=3, stride=1, dilation=1, groups=1,
-                                    padding_mode='zeros', act=activation)
-        self.conv2 = Conv2dBnAct(in_channels=out_channels // 2, out_channels=out_channels, kernel_size=3, stride=2, dilation=1, groups=1,
-                                    padding_mode='zeros', act=activation)
-        
-        self.conv3 = Conv2dBnAct(in_channels=out_channels, out_channels=out_channels, kernel_size=1, stride=1, dilation=1, groups=1,
-                                    padding_mode='zeros', act=activation)
-        self.in_channels=out_channels
-        for i in range(self.iter_cnt):
-            self.block_list.append(Block53(in_channels=self.in_channels, out_channels=out_channels, kernel_size=3, stride=1, activation='Mish'))
-        
-        self.conv4 = Conv2dBnAct(in_channels=out_channels, out_channels=out_channels, kernel_size=1, stride=1, dilation=1, groups=1, 
-                                    padding_mode='zeros', act=activation)
-        self.identity = Conv2dBnAct(in_channels=out_channels, out_channels=out_channels, kernel_size=1, stride=1, dilation=1, groups=1,
-                                    padding_mode='zeros', act=activation)
-                                    
-    def forward(self, input):
-        output = self.conv1(input)
-        split_output = self.conv2(output)
-        output = self.conv3(split_output)
-
-        for b in self.block_list:
-            output = b(output)
-        output = self.conv4(output)
-        split_output = self.identity(split_output)
-        output = torch.cat([output, split_output], axis=1)
-        return output
-
-
-class CSPBlock(nn.Module):
-    def __init__(self, out_channels, iter_cnt, activation=None):
-        super(CSPBlock, self).__init__()
-        self.iter_cnt = iter_cnt
-        self.block_list = nn.ModuleList([])
-        self.conv2 = Conv2dBnAct(in_channels=out_channels // 2, out_channels=out_channels, kernel_size=3, stride=2, dilation=1, groups=1,
-                                    padding_mode='zeros', act=activation)
-        
-        self.conv3 = Conv2dBnAct(in_channels=out_channels, out_channels=out_channels // 2, kernel_size=1, stride=1, dilation=1, groups=1,
-                                    padding_mode='zeros', act=activation)
-        self.in_channels=out_channels // 2
-        for i in range(self.iter_cnt):
-            self.block_list.append(Block53(in_channels=self.in_channels, out_channels=self.in_channels, kernel_size=3, stride=1, activation='Mish'))
-        self.conv4 = Conv2dBnAct(in_channels=out_channels // 2, out_channels=out_channels // 2, kernel_size=1, stride=1, dilation=1, groups=1, 
-                                    padding_mode='zeros', act=activation)
-        self.identity = Conv2dBnAct(in_channels=out_channels, out_channels=out_channels // 2, kernel_size=1, stride=1, dilation=1, groups=1,
-                                    padding_mode='zeros', act=activation)
-                                    
-    def forward(self, input):
-        split_output = self.conv2(input)
-        output = self.conv3(split_output)
-
-
-        for b in self.block_list:
-            output = b(output)
-
-        output = self.conv4(output)
-        split_output = self.identity(split_output)
-        output = torch.cat([output, split_output], axis=1)
-        return output
-
-
-class StemBlock(nn.Module):
-    def __init__(self, in_channels, out_channels, activation=None):
-        super(StemBlock, self).__init__()
-        self.conv1 = Conv2dBnAct(in_channels=in_channels, out_channels=out_channels // 2, kernel_size=3, stride=1, dilation=1, groups=1,
-                                    padding_mode='zeros', act=activation)
-        self.conv2 = Conv2dBnAct(in_channels=out_channels // 2, out_channels=out_channels, kernel_size=3, stride=2, dilation=1, groups=1,
-                                    padding_mode='zeros', act=activation)
-
-    def forward(self, input):
-        output = self.conv1(input)
-        output = self.conv2(output)
-        return output
 
 
 class _CSPDarkNet53(nn.Module):
     def __init__(self, in_channels, classes):
         super(_CSPDarkNet53, self).__init__()
         self.in_channels = 64
-        self.stages = []
+        self.stages = [128, 256, 512, 1024]
         # configs : in_channels, out_channels, iter_cnt, activation
-        stem = [3, 64, 1, 'Mish']
         block1 = [128, 2, 'Mish']
         block2 = [256, 8, 'Mish']
         block3 = [512, 8, 'Mish']

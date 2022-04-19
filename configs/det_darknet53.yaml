@@ -15,7 +15,7 @@ save_freq: 1
 save_dir: './saved'
 gpus: -1
 
-backbone: 'DarkNet53'
+backbone: 'DarkNet'
 varient: 53
 
 optimizer: 'adam'
