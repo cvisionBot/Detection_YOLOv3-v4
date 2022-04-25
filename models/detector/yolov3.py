@@ -61,6 +61,6 @@ if __name__ == '__main__':
     model = YOLOv3(Backbone=DarkNet, num_classes=20, in_channels=3, varient=53)
     # model visualize to onnx
     dumTensor = torch.rand(1, 3, 416, 416)
-    print(model(dumTensor))
+    # print(model(dumTensor))
     # torch.onnx.export(model, dumTensor, 'model_visualize.onnx', export_params=True, opset_version=9, do_constant_folding=True,
     #                     input_names=['input'], output_names=['branch1', 'branch2', 'branch3'])

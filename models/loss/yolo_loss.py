@@ -102,9 +102,6 @@ class YOLO_Loss(nn.Module):
         loss = (loss_x * self.lambda_xy) + (loss_y * self.lambda_xy) + \
             (loss_w * self.lambda_wh) + (loss_h * self.lambda_wh) + \
                 (loss_conf * self.lambda_conf) + (loss_cls * self.lambda_cls)
-        loss = (loss_x * self.lambda_xy) + (loss_y * self.lambda_xy) + \
-            (loss_w * self.lambda_wh) + (loss_h * self.lambda_wh) + \
-                 (loss_conf * self.lambda_conf) + (loss_cls * self.lambda_cls)
         return loss
 
 
