@@ -35,14 +35,11 @@ class SPP_Module(nn.Module):
         output = self.conv4(output)
 
         max_pool1 = self.max_pool1(output)
-        print('shape : ', max_pool1.shape)
         max_pool2 = self.max_pool2(output)
-        print('shape : ', max_pool2.shape)
         max_pool3 = self.max_pool3(output)
-        print('shape : ', max_pool3.shape)
 
         output = torch.cat([max_pool1, max_pool2, max_pool3, output], axis=1)
-        print('output shape : ', output)
+
         output = self.conv5(output)
         output = self.conv6(output)
         output = self.conv7(output)

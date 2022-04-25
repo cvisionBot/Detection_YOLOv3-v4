@@ -60,19 +60,19 @@ class YOLOv4(nn.Module):
         s3_header = torch.cat([s3_route, up_module2], axis=1)
         neck2 = self.neck2(s3_header)
         branch1 = self.head1(neck2) # [1, 3 * (5 + classes), 64, 64]
-        print('branch1 : ', branch1.shape)
+        # print('branch1 : ', branch1.shape)
 
         branch1_route = self.branch_route1(neck2)
         branch1_cat = torch.cat([branch1_route, neck1], axis=1)
         neck3 = self.neck3(branch1_cat)
         branch2 = self.head2(neck3) # [1, 3 * (5 + classes), 32, 32]
-        print('branch2 : ', branch2.shape)
+        # print('branch2 : ', branch2.shape)
 
         branch2_route = self.branch_route2(neck3)
         branch2_cat = torch.cat([branch2_route, spp_out], axis=1)
         neck4 = self.neck4(branch2_cat)
         branch3 = self.head3(neck4) # [1, 3 * (5 + classes), 16, 16]
-        print('branch3 : ', branch3.shape)
+        # print('branch3 : ', branch3.shape)
 
         return branch3, branch2, branch1
 
@@ -83,6 +83,6 @@ if __name__ == '__main__':
     from models.backbone.darknet import DarkNet
     model = YOLOv4(Backbone=DarkNet, num_classes=20, in_channels=3)
     dumTensor = torch.rand(1, 3, 512, 512)
-    print(model(dumTensor))
-    torch.onnx.export(model, dumTensor, 'model_visualize.onnx', export_params=True, opset_version=9, do_constant_folding=True,
-                        input_names=['input'], output_names=['branch3', 'branch2', 'branch1'])
+    # print(model(dumTensor))
+    # torch.onnx.export(model, dumTensor, 'model_visualize.onnx', export_params=True, opset_version=9, do_constant_folding=True,
+    #                     input_names=['input'], output_names=['branch3', 'branch2', 'branch1'])

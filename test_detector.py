@@ -7,6 +7,7 @@ import numpy as np
 import torch
 from torchsummary import summary
 from models.detector.yolov3 import YOLOv3
+from models.detector.yolov4 import YOLOv4
 from models.detector.anchors import pascal_voc
 from module.detector import Detector
 from utils.module_select import get_model
@@ -26,6 +27,18 @@ def gen_random_colors(names):
                random.randint(0, 255),
                random.randint(0, 255)) for i in range(len(names))]
     return colors
+
+
+def visualize_detection(image, box, class_name, conf, color):
+    x1, y1, x2, y2 = box
+    image = cv2.rectangle(image, (x1, y1), (x2, y2), color)
+
+    caption = f'{class_name} {conf:.2f}'
+    image = cv2.putText(image, caption, (x1+4, y1+20),
+                        cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 0, 0), 3, cv2.LINE_AA)
+    image = cv2.putText(image, caption, (x1+4, y1+20),
+                        cv2.FONT_HERSHEY_SIMPLEX, 0.7, color, 2, cv2.LINE_AA)
+    return image
 
 
 def decode_boxes(input, anchors, num_classes, image_size):
@@ -86,12 +99,12 @@ def main(cfg, image_name, save):
 
     # Load trained model
     backbone = get_model(cfg['backbone'])
-    model = YOLOv3(Backbone=backbone, num_classes=cfg['classes'], in_channels=cfg['in_channels'], varient=cfg['varient'])
+    model = YOLOv4(Backbone=backbone, num_classes=cfg['classes'], in_channels=cfg['in_channels'], varient=cfg['varient'])
     if torch.cuda.is_available:
         model = model.to('cuda')
 
     model_module = Detector.load_from_checkpoint(
-        '/home/insig/Detection_YOLOv3/saved/DarkNet53_YOLOv3_Pascal/version_0/checkpoints/last.ckpt', model=model)
+        '/home/insig/Detection_YOLOv3/saved/DarkNet53_YOLOv3_Pascal/version_2/checkpoints/last.ckpt', model=model)
     model_module.eval()
     preds = model_module(image_inp)
     decoded = []
@@ -116,11 +129,15 @@ def main(cfg, image_name, save):
                 x2 = int((x2 / pre_w) * ori_w)
                 # Create a Rectangle patch
                 image = cv2.rectangle(image, (x1, y1), (x2, y2), color, 2)
+                class_name = names[int(cls_pred)]
+                caption = f'{class_name} {conf:.2f}'
+                image = cv2.putText(image, caption, (x1+4, y1+20),
+                        cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 0, 0), 3, cv2.LINE_AA)
+                image = cv2.putText(image, caption, (x1+4, y1+20),
+                        cv2.FONT_HERSHEY_SIMPLEX, 0.7, color, 2, cv2.LINE_AA)
             # cv2.imshow("dkdk", image)
             # cv2.waitKey(0)
             cv2.imwrite("./inference/result/inference.png", image)
-    
-    
 
 
 if __name__ == '__main__':

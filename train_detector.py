@@ -12,6 +12,7 @@ from utils.yaml_helper import get_train_configs
 from dataset.detection import yolo_format
 from module.detector import Detector
 from models.detector.yolov3 import YOLOv3
+from models.detector.yolov4 import YOLOv4
 
 from pytorch_lightning.plugins import DDPPlugin
 from pytorch_lightning.loggers import TensorBoardLogger
@@ -41,7 +42,7 @@ def train(cfg, ckpt=None):
     )
 
     backbone = get_model(cfg['backbone'])
-    model = YOLOv3(Backbone=backbone, num_classes=cfg['classes'], in_channels=cfg['in_channels'], varient=cfg['varient'])
+    model = YOLOv4(Backbone=backbone, num_classes=cfg['classes'], in_channels=cfg['in_channels'], varient=cfg['varient'])
     model_module = Detector(model, cfg, epoch_length=data_module.train_dataloader().__len__())
 
     callbacks = [
