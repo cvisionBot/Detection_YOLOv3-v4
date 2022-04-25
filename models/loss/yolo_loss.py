@@ -76,7 +76,7 @@ class YOLO_Loss(nn.Module):
         scaled_anchors = [(a_w / stride_w, a_h / stride_h) for a_w, a_h in self.branch_anchors]
         # [b, 3, (5 + 20), layer_h, layer_w]
         prediction = pred.view(batch_size, self.num_anchors, self.bbox_attrs, layer_h, layer_w).permute(0, 1, 3, 4, 2).contiguous()
-        
+
         # Get outputs
         x = torch.sigmoid(prediction[..., 0])
         y = torch.sigmoid(prediction[..., 1])
@@ -102,9 +102,6 @@ class YOLO_Loss(nn.Module):
         loss = (loss_x * self.lambda_xy) + (loss_y * self.lambda_xy) + \
             (loss_w * self.lambda_wh) + (loss_h * self.lambda_wh) + \
                 (loss_conf * self.lambda_conf) + (loss_cls * self.lambda_cls)
-        loss = (loss_x * self.lambda_xy) + (loss_y * self.lambda_xy) + \
-            (loss_w * self.lambda_wh) + (loss_h * self.lambda_wh) + \
-                 (loss_conf * self.lambda_conf) + (loss_cls * self.lambda_cls)
         return loss
 
 
@@ -144,8 +141,3 @@ class YOLO_Loss(nn.Module):
                 tconf[b, best_n, gj, gi] = 1
                 tcls[b, best_n, gj, gi, int(target[b, t, 4])] = 1
         return mask, noobj_mask, tx, ty, tw, th, tconf, tcls    
-
-    
-        
-
-
