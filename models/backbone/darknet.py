@@ -98,11 +98,14 @@ class _DarkNet53(nn.Module):
         s1_max = self.s1_max_pool(s1) 
         s2 = self.block2(s1_max) 
         s2_max = self.s2_max_pool(s2) 
-        s3 = self.block3(s2_max) 
+        s3 = self.block3(s2_max)
+        print('s3.shape : ', s3.shape) 
         s3_max = self.s3_max_pool(s3) 
-        s4 = self.block4(s3_max) 
+        s4 = self.block4(s3_max)
+        print('s4.shape : ', s4.shape) 
         s4_max = self.s4_max_pool(s4) 
-        s5 = self.block5(s4_max) 
+        s5 = self.block5(s4_max)
+        print('s5.shape : ', s5.shape) 
         pred = self.classifier(s5)
         b, c, h, w = pred.size()
         pred = pred.view(b, c)
@@ -128,5 +131,5 @@ def DarkNet(in_channels, classes=1000, varient=None):
 
 
 if __name__ == '__main__':
-    model = DarkNet(in_channels=3, classes=1000)
+    model = DarkNet(in_channels=3, classes=1000, varient=53)
     model(torch.rand(1, 3, 512, 512))

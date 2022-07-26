@@ -184,3 +184,34 @@ class Upsample_Modules(nn.Module):
         output = self.upsample(output)
         return output
 
+class Pretrain_Neck_Modules(nn.Module):
+    def __init__(self, in_channels, pre_channels, out_channels):
+        super(Pretrain_Neck_Modules, self).__init__()
+        self.get_channel = out_channels
+        self.conv1_1 = Conv2dBnAct(in_channels=pre_channels, out_channels=in_channels // 2, kernel_size=1, stride=1)
+        self.conv1_2 = Conv2dBnAct(in_channels=in_channels // 2, out_channels=in_channels, kernel_size=3, stride=1)
+        self.conv2_1 = Conv2dBnAct(in_channels=in_channels, out_channels=in_channels // 2, kernel_size=1, stride=1)
+        self.conv2_2 = Conv2dBnAct(in_channels=in_channels // 2, out_channels=in_channels, kernel_size=3, stride=1)
+        self.conv = Conv2dBnAct(in_channels=in_channels, out_channels=out_channels, kernel_size=1, stride=1)
+
+    def forward(self, input):
+        output = self.conv1_1(input)
+        output = self.conv1_2(output)
+        output = self.conv2_1(output)
+        output = self.conv2_2(output)
+        output = self.conv(output)
+        return output
+
+    def get_channels(self):
+        return self.get_channel
+
+class Pretrain_Upsample_Modules(nn.Module):
+    def __init__(self, in_channels):
+        super(Pretrain_Upsample_Modules, self).__init__()
+        self.conv = Conv2dBnAct(in_channels=in_channels, out_channels=in_channels, kernel_size=1, stride=1)
+        self.upsample = nn.Upsample(scale_factor=2, mode='nearest')
+
+    def forward(self, input):
+        output = self.conv(input)
+        output = self.upsample(output)
+        return output
